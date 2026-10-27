@@ -1,0 +1,13 @@
+# private notes and agent files
+CLAUDE.md
+notes/
+.notes/
+.claude/
+*.local.md
+# secrets
+.env
+.env.*
+!.env.example
+# os/editor
+.DS_Store
+node_modules/
