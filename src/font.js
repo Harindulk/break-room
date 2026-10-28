@@ -43,8 +43,7 @@ export function layoutText(text) {
     [...line].forEach((char, index) => patterns[char].split('/').slice(0, 7).forEach((row, y) => {
       [...row].forEach((pixel, x) => {
         if (pixel === '1') pixels.push({ x: left + (index * 6 + x) * cell,
-          y: top + (lineIndex * 9 + y) * cell, w: cell - Math.min(4, cell * .17),
-          h: cell - Math.min(4, cell * .17) });
+          y: top + (lineIndex * 9 + y) * cell, w: cell * .85, h: cell * .85 });
       });
     }));
   });

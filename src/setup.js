@@ -24,7 +24,8 @@ export function setupPage() {
     const url = overlayURL(true);
     document.querySelector('#demo-link').href = url.href;
     url.searchParams.set('ui', '0');
-    preview.src = url.href;
+    url.searchParams.set('rate', '3');
+    if (preview.src !== url.href) preview.src = url.href;
   }
   form.addEventListener('input', () => {
     clearTimeout(timer);

@@ -33,6 +33,52 @@ test('normal chat has a stable lane, bounded angle, speed and message size', () 
   assert.equal(game.balls.at(-1).r, 13 * 1.5);
 });
 
+test('new labels stop at 20 and resume when visible labels expire or leave', () => {
+  const game = new Game();
+  for (let i = 0; i < 30; i++) game.receive(event({ firstMsg: true }));
+  assert.equal(game.balls.filter(ball => ball.showLabel).length, 20);
+  game.balls[0].age = 1.5;
+  game.receive(event()); assert.equal(game.balls.at(-1).showLabel, true);
+  game.receive(event()); assert.equal(game.balls.at(-1).showLabel, false);
+  game.balls[1].y = 1200;
+  game.receive(event()); assert.equal(game.balls.at(-1).showLabel, true);
+  assert.ok(game.balls.slice(20, 30).every(ball => !ball.showLabel));
+});
+
+test('raids label only their first ball and vary both Twitch and fallback hues within 15 degrees', () => {
+  for (const color of ['#ff0000', 'hsl(0 82% 70%)']) {
+    let random = 0;
+    const game = new Game({ random: () => (random++ % 11) / 10 });
+    game.receive(event({ type: 'raid', viewerCount: 40, color }));
+    const wave = game.pending;
+    assert.equal(wave[0].extra.showLabel, true);
+    assert.ok(wave.slice(1).every(item => item.extra.showLabel === false));
+    const hues = wave.map(item => Number(item.extra.color.match(/hsl\(([\d.]+)/)[1]));
+    assert.ok(hues.every(hue => Math.min(hue, 360 - hue) <= 15));
+    assert.ok(new Set(hues).size > 1);
+    for (const item of wave) game.launch(item.event, item.extra);
+    assert.equal(game.balls.filter(ball => ball.showLabel).length, 1);
+    assert.ok(game.balls.every(ball => ball.login === event().login));
+  }
+});
+
+test('highlighted messages create a banner as well as a giant ball', () => {
+  const game = new Game();
+  game.receive(event({ highlighted: true, text: 'BIG MOMENT' }));
+  assert.equal(game.banners.at(-1).title, 'BIG MOMENT');
+  assert.match(game.banners.at(-1).subtitle, /HIGHLIGHT/);
+  assert.ok(game.balls[0].r >= 39);
+});
+
+test('brick gaps stay at 15 percent for short, long and two-line signs', () => {
+  for (const text of ['I', 'BE RIGHT BACK', 'BRB|5 MIN']) {
+    const bricks = layoutText(text), row = bricks.filter(brick => brick.y === bricks[0].y);
+    const cell = row[1].x - row[0].x;
+    assert.ok(Math.abs(bricks[0].w / cell - .85) < .0001);
+    assert.equal(bricks[0].h, bricks[0].w);
+  }
+});
+
 test('subscriber fan, gifts, cheer cap, highlight, redemption and first message', () => {
   const game = new Game();
   game.receive(event({ type: 'sub' }));

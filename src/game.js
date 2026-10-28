@@ -5,6 +5,16 @@ export const WIDTH = 1920, HEIGHT = 1080, STEP = 1 / 120;
 const CELL = 96;
 const gold = '#ffd56b';
 
+function raidColor(color, offset) {
+  if (color.startsWith('hsl(')) return color.replace(/hsl\(([\d.]+)/, (_, hue) => `hsl(${(+hue + offset + 360) % 360}`);
+  const [r, g, b] = color.slice(1).match(/../g).map(hex => parseInt(hex, 16) / 255);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), delta = max - min;
+  const lightness = (max + min) / 2;
+  const saturation = delta ? delta / (1 - Math.abs(2 * lightness - 1)) : 0;
+  const hue = !delta ? 0 : 60 * (max === r ? (g - b) / delta : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4);
+  return `hsl(${(hue + offset + 360) % 360} ${saturation * 100}% ${lightness * 100}%)`;
+}
+
 export class Game {
   constructor(options = {}) {
     this.options = options;
@@ -72,7 +82,8 @@ export class Game {
     if (event.type === 'raid') {
       const count = Math.min(80, Math.max(0, Math.floor(event.viewerCount)));
       for (let i = 0; i < count; i++) this.pending.push({ delay: i * 2 / Math.max(1, count - 1),
-        event, extra: { x: 70 + (WIDTH - 140) * i / Math.max(1, count - 1), color: event.color } });
+        event, extra: { x: 70 + (WIDTH - 140) * i / Math.max(1, count - 1), showLabel: i === 0,
+          color: raidColor(event.color, (this.random() - .5) * 30) } });
       this.banner(`RAID! ${event.user} + ${event.viewerCount}`, 'THE WHOLE CREW IS HERE');
       this.shake = this.reducedMotion ? 0 : 12;
       this.sound('special');
@@ -87,7 +98,12 @@ export class Game {
         this.banner(`${event.user} · ${event.bits} BITS`, 'COMING THROUGH', gold);
         this.shake = this.reducedMotion ? 0 : 9;
         this.sound('special');
-      } else this.launch(event, { multiplier: event.highlighted || (event.reward && event.text) ? 3 : 1 });
+      } else {
+        const special = event.highlighted || (event.reward && event.text);
+        this.launch(event, { multiplier: special ? 3 : 1 });
+        if (special) this.banner(event.text || `${event.user} takes a big shot!`,
+          `${event.highlighted ? 'HIGHLIGHT' : 'REDEMPTION'} · ${event.user}`);
+      }
     }
   }
 
@@ -97,9 +113,11 @@ export class Game {
     const size = extra.heavy ? 1 : (emote || event.mockFace ? 1.5 : 1) * Math.min(1.3, 1 + [...(event.text || '')].length / 300);
     const r = 13 * (extra.multiplier ?? 1) * size;
     const x = extra.x ?? 80 + hash(event.login) % (WIDTH - 160);
+    const showLabel = extra.showLabel !== false && this.balls.filter(ball =>
+      ball.showLabel && ball.age < 1.5 && !ball.dead && ball.y - ball.r < HEIGHT).length < 20;
     this.balls.push({ x: Math.max(r, Math.min(WIDTH - r, x)), y: HEIGHT - r, vx: Math.sin(angle) * 900,
       vy: -Math.cos(angle) * 900, r, color: extra.color || event.color, login: event.login,
-      user: event.user, age: 0, trail: [], trailTick: 0, squash: 0, squashAxis: 'y',
+      user: event.user, showLabel, age: 0, trail: [], trailTick: 0, squash: 0, squashAxis: 'y',
       heavy: extra.heavy, budget: extra.budget, touched: new Set(), first: event.firstMsg,
       emote, face: event.mockFace, dead: false });
     this.launched++;
@@ -238,6 +256,6 @@ export class Game {
       level: this.level, bricks: this.remaining, totalBricks: this.total, elapsed: this.elapsed,
       launched: this.launched, leaders: this.leaders(), pendingRaidBalls: this.pending.length,
       win: this.win, banners: this.banners.map(banner => banner.title),
-      ballCount: this.balls.length, balls: this.balls.slice(0, 12).map(({ x, y, vx, vy, r, user, heavy }) => ({ x, y, vx, vy, r, user, heavy })) };
+      ballCount: this.balls.length, balls: this.balls.slice(0, 12).map(({ x, y, vx, vy, r, user, heavy, showLabel }) => ({ x, y, vx, vy, r, user, heavy, showLabel })) };
   }
 }

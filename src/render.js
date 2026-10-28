@@ -34,7 +34,8 @@ export class Renderer {
       const c = canvas.getContext('2d');
       c.font = font; c.textBaseline = 'middle'; c.lineJoin = 'round';
       c.lineWidth = Math.max(3, size / 9); c.strokeStyle = ink; c.fillStyle = color;
-      c.strokeText(text, pad, canvas.height / 2); c.fillText(text, pad, canvas.height / 2);
+      if (color !== ink) c.strokeText(text, pad, canvas.height / 2);
+      c.fillText(text, pad, canvas.height / 2);
       label = { canvas, width, pad };
       // Names are rasterized once, rather than stroked on every frame of a busy raid.
       if (this.labels.size >= 512) this.labels.delete(this.labels.keys().next().value);
@@ -106,7 +107,7 @@ export class Renderer {
         c.beginPath(); c.moveTo(x - 4, y); c.lineTo(x + 4, y); c.moveTo(x, y - 4); c.lineTo(x, y + 4); c.stroke();
       }
     }
-    if (ball.age < 1.5) {
+    if (ball.showLabel && ball.age < 1.5) {
       c.globalAlpha = Math.min(1, (1.5 - ball.age) * 2);
       const name = this.fit(ball.user, 240, 20);
       const x = Math.max(130, Math.min(WIDTH - 130, ball.x));
@@ -137,9 +138,9 @@ export class Renderer {
     this.text('BREAK ROOM', 960, 66, 25, mint, 'center', 900);
     this.text(`ROUND ${String(game.level).padStart(2, '0')}  /  ${game.remaining} BRICKS LEFT`, 960, 133, 18, '#bfcec8', 'center');
     for (const brick of game.bricks) if (brick.hp > 0) {
-      this.box(brick.x, brick.y + 4, brick.w, brick.h, '#050f18b3', 4);
-      this.box(brick.x, brick.y, brick.w, brick.h, brick.flash > 0 ? white : brick.color, 4);
-      if (brick.hp < brick.maxHp) this.box(brick.x, brick.y, brick.w, brick.h, '#07141a66', 4);
+      this.box(brick.x, brick.y + 4, brick.w, brick.h, '#050f18b3', 3);
+      this.box(brick.x, brick.y, brick.w, brick.h, brick.flash > 0 ? white : brick.color, 3);
+      if (brick.hp < brick.maxHp) this.box(brick.x, brick.y, brick.w, brick.h, '#07141a66', 3);
       if (brick.maxHp > 1) {
         c.fillStyle = '#102c37aa';
         for (let i = 0; i < brick.hp - 1; i++) c.fillRect(brick.x + 4 + i * 6, brick.y + brick.h - 7, 3, 3);
@@ -204,11 +205,11 @@ export class Renderer {
   drawBanner(banner, reduced) {
     const c = this.ctx;
     const t = Math.min(1, banner.age / .4), overshoot = 1 + 2.7 * (t - 1) ** 3 + 1.7 * (t - 1) ** 2;
-    c.save(); c.globalAlpha = Math.min(1, banner.age * 8, (4 - banner.age) * 2);
+    c.save(); c.globalAlpha = Math.max(0, Math.min(1, (4 - banner.age) / .8));
     c.translate(960, 670); c.scale(reduced ? 1 : .7 + overshoot * .3, reduced ? 1 : .7 + overshoot * .3);
-    this.box(-660, -64, 1320, 128, '#0a151cf2', 22);
-    this.text(this.fit(banner.title, 1240, 40), 0, -12, 40, banner.color, 'center', 900);
-    this.text(banner.subtitle, 0, 33, 17, white, 'center');
+    this.box(-740, -84, 1480, 168, banner.color, 22);
+    this.text(this.fit(banner.title, 1360, 64), 0, -18, 64, ink, 'center', 900);
+    this.text(this.fit(banner.subtitle, 1360, 22), 0, 45, 22, ink, 'center');
     c.restore();
   }
 
