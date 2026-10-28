@@ -11,3 +11,5 @@ notes/
 # os/editor
 .DS_Store
 node_modules/
+output/
+progress.md

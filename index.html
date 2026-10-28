@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101916">
+  <meta name="description" content="Take a break. Let chat break things. A no-login Twitch BRB game for your stream.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='12' fill='%2391ffd4'/%3E%3Cpath d='M12 12h18v8H12zm6 12h18v8H18zm-6 12h12v4H12z' fill='%23101916'/%3E%3C/svg%3E">
+  <title>Break Room — let chat break things.</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="setup" hidden>
+    <header class="masthead"><a class="wordmark" href="./"><span class="mark" aria-hidden="true">▰</span> BREAK ROOM</a><span class="eyebrow">YOU TAKE FIVE. CHAT TAKES OVER.</span></header>
+    <section class="intro"><span class="eyebrow accent">THE BRB SCREEN WITH SOMETHING TO DO</span><h1>Take a break.<br>Let chat <span>break things.</span></h1><p>Every message is a ball. Every brick is fair game.<br>Turn your away screen into a little act of teamwork.</p></section>
+    <section class="workspace" aria-label="Build your overlay">
+      <form id="settings" class="settings">
+        <div class="section-title"><span class="step-number">01</span><h2>Make it yours</h2></div>
+        <label for="channel">Twitch channel</label>
+        <div class="input-prefix"><span>twitch.tv /</span><input id="channel" name="channel" placeholder="your_channel" pattern="[A-Za-z0-9_]+" maxlength="25" autocomplete="off" required></div>
+        <label for="wall-text">The writing on the wall</label>
+        <input id="wall-text" name="text" value="BE RIGHT BACK" maxlength="100" autocomplete="off">
+        <small>Use | for a second line. A little ♥ is welcome.</small>
+        <label for="back">Back in <span class="optional">(minutes, optional)</span></label>
+        <input id="back" name="back" type="number" min="0" max="1440" step="any" placeholder="5">
+        <div class="toggles"><label class="toggle"><input id="bg" name="bg" type="checkbox"><span class="switch" aria-hidden="true"></span>Dark backdrop</label><label class="toggle"><input id="sound" name="sound" type="checkbox"><span class="switch" aria-hidden="true"></span>Sound effects</label></div>
+        <button class="primary" type="submit" id="copy-url">Copy OBS URL <span aria-hidden="true">↗</span></button>
+        <p id="copy-status" class="copy-status" role="status">No login. No tokens. Just your channel.</p>
+        <input id="url-fallback" aria-label="Overlay URL — select and copy" readonly hidden>
+      </form>
+      <div class="preview-panel"><div class="preview-header"><div><span class="live-dot"></span><span class="eyebrow">LIVE PREVIEW</span></div><span>1920 × 1080</span></div><div class="preview-frame"><iframe id="preview" title="Live Break Room game preview" allow="autoplay; fullscreen"></iframe></div><div class="preview-footer"><p>Fake chat. Real destruction.<br><span>Your viewers just have to say hello.</span></p><a class="demo-link" id="demo-link" href="?mock=1&amp;bg=1">Try the demo <span aria-hidden="true">↗</span></a></div><div class="feature-row"><span><b>01</b> Chat launches balls</span><span><b>02</b> Specials hit harder</span><span><b>03</b> Break. Rebuild. Repeat.</span></div></div>
+    </section>
+    <section class="instructions"><div class="section-title"><span class="step-number">02</span><h2>Put it on your stream</h2></div><ol><li><span>1</span><p>In OBS, open <strong>Sources → + → Browser.</strong></p></li><li><span>2</span><p>Paste your copied <strong>overlay URL.</strong></p></li><li><span>3</span><p>Set width <strong>1920</strong>, height <strong>1080.</strong></p></li></ol><p class="compatibility">Also at home in Streamlabs and Meld. Layer it over your BRB art, or switch on the backdrop.</p></section>
+    <footer><span>BUILT FOR THE IN-BETWEEN.</span><span>Away from the keyboard. Still together.</span></footer>
+  </main>
+  <div id="overlay" hidden><canvas id="game" width="1920" height="1080" aria-label="Break Room: chat messages launch balls to break a wall of text."></canvas></div>
+  <form id="presenter" hidden aria-label="Send a mock chat message"><div class="presenter-title">SAY SOMETHING. BREAK SOMETHING.<button id="close-presenter" type="button" aria-label="Close message box">×</button></div><label for="presenter-name">Chatter name</label><input id="presenter-name" value="pixel_otter" maxlength="30" required><label for="presenter-message">Message</label><input id="presenter-message" placeholder="hello, wrecking crew" maxlength="500" required><button class="primary" type="submit">Launch message ↗</button><small>Moderator chatters can use !rebuild and !clear.</small></form>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
