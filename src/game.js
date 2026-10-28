@@ -23,6 +23,7 @@ export class Game {
     this.reducedMotion = options.reducedMotion ?? false;
     this.level = 0;
     this.clock = 0;
+    this.launchTimes = [];
     this.particles = [];
     this.banners = [];
     this.shake = 0;
@@ -43,7 +44,9 @@ export class Game {
     this.banners = [];
     this.particles = [];
     this.grid = new Map();
-    const strength = (this.level - 1) * .3;
+    // Each extra 60 launches/min adds one HP across the wall, up to the existing cap.
+    const trafficBonus = Math.min(2, Math.max(0, (this.recentLaunches() - 60) / 60));
+    const strength = (this.level - 1) * .3 + trafficBonus;
     const pixels = layoutText(this.options.text || 'BE RIGHT BACK');
     const order = pixels.map((_, index) => index).sort((a, b) => hash(`brick${a}`) - hash(`brick${b}`));
     const tougher = new Set(order.slice(0, Math.round(pixels.length * (strength % 1))));
@@ -67,6 +70,13 @@ export class Game {
   }
 
   leaders() { return [...this.scores.values()].sort((a, b) => b.score - a.score || a.user.localeCompare(b.user)).slice(0, 5); }
+
+  recentLaunches() {
+    let expired = 0;
+    while (expired < this.launchTimes.length && this.launchTimes[expired] <= this.clock - 60) expired++;
+    if (expired) this.launchTimes.splice(0, expired);
+    return this.launchTimes.length;
+  }
 
   banner(title, subtitle = '', color = '#91ffd4') {
     this.banners.push({ title, subtitle, color, age: 0 });
@@ -121,6 +131,8 @@ export class Game {
       heavy: extra.heavy, budget: extra.budget, touched: new Set(), first: event.firstMsg,
       emote, face: event.mockFace, dead: false });
     this.launched++;
+    this.recentLaunches();
+    this.launchTimes.push(this.clock);
   }
 
   burst(x, y, color, count = 9, power = 1) {

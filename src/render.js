@@ -135,8 +135,6 @@ export class Renderer {
     }
     c.save();
     if (game.shake && !game.reducedMotion) c.translate(Math.sin(game.clock * 107) * game.shake, Math.cos(game.clock * 93) * game.shake * .6);
-    this.text('BREAK ROOM', 960, 66, 25, mint, 'center', 900);
-    this.text(`ROUND ${String(game.level).padStart(2, '0')}  /  ${game.remaining} BRICKS LEFT`, 960, 133, 18, '#bfcec8', 'center');
     for (const brick of game.bricks) if (brick.hp > 0) {
       this.box(brick.x, brick.y + 4, brick.w, brick.h, '#050f18b3', 3);
       this.box(brick.x, brick.y, brick.w, brick.h, brick.flash > 0 ? white : brick.color, 3);
@@ -160,6 +158,9 @@ export class Renderer {
     }
     c.globalAlpha = 1;
     c.restore();
+    // HUD stays above the action and outside its screen shake.
+    this.text('BREAK ROOM', 960, 66, 25, mint, 'center', 900);
+    this.text(`ROUND ${String(game.level).padStart(2, '0')}  /  ${game.remaining} BRICKS LEFT`, 960, 133, 18, '#bfcec8', 'center');
     if (!game.win) {
       this.text('YOUR CHAT. YOUR WRECKING CREW.', 960, 790, 34, white, 'center', 900);
       this.text('Every message launches a ball. Talk the wall down.', 960, 833, 23, '#a4bcb3', 'center', 500);

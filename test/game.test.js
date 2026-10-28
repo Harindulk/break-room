@@ -186,6 +186,41 @@ test('win freezes results, lasts 0.6s plus a 10s card, then rebuilds tougher', (
   assert.ok(game.bricks.every(brick => brick.hp === 3));
 });
 
+test('rebuild toughness grows above 60 launches/min, leaves small channels unchanged and caps at 3 HP', () => {
+  const walls = [0, 60, 61, 90, 120, 180, 500].map(count => {
+    const game = new Game();
+    for (let i = 0; i < count; i++) game.receive(event());
+    assert.ok(game.bricks.every(brick => brick.hp === 1), 'traffic never changes a wall mid-round');
+    game.rebuild();
+    assert.ok(game.bricks.every(brick => brick.hp <= 3 && brick.hp === brick.maxHp));
+    return game.bricks.map(brick => brick.hp);
+  });
+  assert.deepEqual(walls[1], walls[0], 'exactly 60 launches keeps the original difficulty');
+  const totals = walls.map(wall => wall.reduce((sum, hp) => sum + hp, 0));
+  for (let i = 2; i < 6; i++) assert.ok(totals[i] > totals[i - 1]);
+  assert.ok(walls[5].every(hp => hp === 3));
+  assert.deepEqual(walls[6], walls[5]);
+});
+
+test('launch history survives wins and rebuilds, then expires from the rolling 60-second window', () => {
+  const game = new Game(), quiet = new Game();
+  const totalHP = state => state.bricks.reduce((sum, brick) => sum + brick.hp, 0);
+  for (let i = 0; i < 80; i++) game.receive(event());
+  game.wipe(); advance(game, 10.7); quiet.rebuild();
+  assert.equal(game.level, 2);
+  assert.equal(game.launched, 0);
+  assert.ok(totalHP(game) > totalHP(quiet), 'the win transition keeps launch history');
+  game.clock = 30;
+  for (let i = 0; i < 80; i++) game.receive(event());
+  game.clock = 60;
+  game.rebuild(); quiet.rebuild();
+  assert.equal(game.recentLaunches(), 80, 'launches exactly 60 seconds old expire');
+  assert.ok(totalHP(game) > totalHP(quiet), 'the newer batch still boosts the next round');
+  game.clock = 90;
+  game.rebuild(); quiet.rebuild();
+  assert.deepEqual(game.bricks.map(brick => brick.hp), quiet.bricks.map(brick => brick.hp));
+});
+
 test('last actual collision wins with the final point included', () => {
   const game = new Game();
   game.receive(event());
