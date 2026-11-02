@@ -2,7 +2,7 @@
 
 **Take a break. Let chat break things.**
 
-Break Room turns a Twitch BRB screen into a game the whole chat plays. The wall spells your message ("BE RIGHT BACK" by default), and every chat message fires a ball at it. Nobody has to learn a command: saying "hi" counts. Subs fire a fan of gold balls, cheers fire a heavy ball that smashes straight through, and a raid sends a wave of balls across the screen. When the wall falls, chat sees how long it took and who broke the most bricks, then the wall rebuilds a little tougher.
+Break Room turns a Twitch BRB screen into a game the whole chat plays. The wall spells your message ("BE RIGHT BACK" by default), and every chat message fires a ball at it. Nobody has to learn a command: saying "hi" counts. Subs fire a fan of gold balls, cheers fire a heavy ball that smashes straight through, and a raid sends a wave of balls across the screen. When the wall falls, chat sees how long it took and who broke the most bricks. Then the wall rebuilds a little tougher, and tougher still if chat is busy.
 
 It's a single web page you add to OBS as a Browser Source. It reads chat anonymously, so there's no login, no token, no bot account and no server.
 
@@ -79,7 +79,9 @@ node --test
 
 ## Built with OpenAI Codex
 
-The project started as a written spec ([`SPEC.md`](SPEC.md)) plus working rules for the agent ([`AGENTS.md`](AGENTS.md)). OpenAI Codex built the game from them in one Codex thread, including the Twitch parser and client, the physics, the effects, the setup page and the tests. After each pass I playtested in the browser, including against a busy live channel, and sent fixes back into the same thread. Every pass ended with `node --test` passing.
+The project started as a written spec ([`SPEC.md`](SPEC.md)) and a short set of working rules for the agent ([`AGENTS.md`](AGENTS.md)). OpenAI Codex built the game from them in one thread: the Twitch parser and client, the physics, the effects, the setup page and the tests.
+
+I playtested every build in a real browser and sent what I found back into the same thread. The second turn fixed faint event banners, raid waves that printed the raider's name on 40 balls, and a white box behind the setup preview. The third drew the HUD above the balls, so the timer stays readable, and made each new wall tougher when chat is busy, so a big channel doesn't flatten it in seconds. Each turn ended with `node --test` passing; there are 29 tests now.
 
 ## License
 
