@@ -55,3 +55,56 @@ test('all HUD elements draw above balls and particles, with banners and win card
   assert.ok(calls.indexOf('ROUND 01  /  0 BRICKS LEFT') > calls.indexOf('particle'));
   assert.equal(calls.at(-1), 'win card');
 });
+
+test('older labels win overlaps, first-message text stays with its name, and HUD areas stay clear', () => {
+  const renderer = Object.create(Renderer.prototype), names = [];
+  renderer.options = { ui: false };
+  renderer.ctx = { clearRect() {}, save() {}, restore() {}, translate() {}, measureText(text) { return { width: text.length * 10 }; } };
+  renderer.fit = text => text;
+  renderer.text = text => names.push(text);
+  renderer.box = () => {};
+  renderer.ball = () => {};
+  const ball = (user, x, y, age, first = false) => ({ user, x, y, age, first, r: 13, showLabel: true });
+  const older = ball('older', 400, 400, 1, true), younger = ball('younger', 402, 402, .2, true);
+  const tagline = ball('tagline intruder', 960, 752, .3, true);
+  const elapsed = ball('elapsed intruder', 960, 879, .3);
+  const countdown = ball('countdown intruder', 960, 986, .3);
+  const game = { level: 1, remaining: 1, total: 1, elapsed: 0, launched: 5, bricks: [], particles: [], banners: [],
+    balls: [younger, tagline, elapsed, countdown, older] };
+  const draw = (back, mock = null) => { names.length = 0; renderer.draw(game, 'mock', mock, back); };
+  draw(123);
+  assert.ok(names.includes('older'));
+  assert.ok(!names.includes('younger'));
+  assert.equal(names.filter(name => name === 'first message!').length, 1);
+  assert.ok(!names.includes('tagline intruder'));
+  assert.ok(!names.includes('elapsed intruder'));
+  assert.ok(!names.includes('countdown intruder'));
+  younger.y = 437; draw(123);
+  assert.ok(!names.includes('younger'), 'the older first-message line reserves space too');
+  younger.x = 700; draw(123);
+  assert.ok(names.includes('younger'), 'occupancy resets every frame as balls separate');
+  draw(null);
+  assert.ok(names.includes('countdown intruder'), 'no countdown means no reserved pill');
+  assert.ok(game.balls.every(ball => ball.showLabel), 'culling never changes launch eligibility');
+  assert.equal(renderer.ctx.globalAlpha, 1);
+
+  const title = ball('title intruder', 960, 28, .3), round = ball('round intruder', 960, 95, .3);
+  const status = ball('status intruder', 200, 35, .3), desk = ball('desk intruder', 200, 872, .3);
+  const board = ball('board intruder', 1700, 62, .3), lowerRow = ball('lower row intruder', 1700, 212, .3);
+  game.balls = [title, round, status, desk, board, lowerRow];
+  let leaders = [];
+  game.leaders = () => leaders;
+  renderer.options.ui = true;
+  draw(null, { rate: 40 });
+  for (const label of [title, round, status, desk, board]) assert.ok(!names.includes(label.user), label.user);
+  assert.ok(names.includes(lowerRow.user), 'empty leaderboard reserves only its current height');
+  leaders = Array.from({ length: 5 }, (_, i) => ({ user: `leader${i}`, score: 5 - i, color: '#fff' }));
+  draw(null, { rate: 40 });
+  assert.ok(!names.includes(lowerRow.user), 'five leaderboard rows reserve the full panel');
+  draw(null);
+  assert.ok(names.includes(desk.user), 'no mock mode means no demo desk reservation');
+  renderer.options.ui = false;
+  draw(null, { rate: 40 });
+  for (const label of [status, desk, board, lowerRow]) assert.ok(names.includes(label.user), label.user);
+  for (const label of [title, round]) assert.ok(!names.includes(label.user), 'title and round remain visible with ui=0');
+});

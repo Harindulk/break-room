@@ -107,12 +107,29 @@ export class Renderer {
         c.beginPath(); c.moveTo(x - 4, y); c.lineTo(x + 4, y); c.moveTo(x, y - 4); c.lineTo(x, y + 4); c.stroke();
       }
     }
-    if (ball.showLabel && ball.age < 1.5) {
-      c.globalAlpha = Math.min(1, (1.5 - ball.age) * 2);
+    c.globalAlpha = 1;
+  }
+
+  ballLabels(balls, occupied, offsetX = 0, offsetY = 0) {
+    const c = this.ctx;
+    // Only eligible labels are sorted; new arrivals cannot displace older names.
+    for (const ball of balls.filter(ball => ball.showLabel && ball.age < 1.5).sort((a, b) => b.age - a.age)) {
       const name = this.fit(ball.user, 240, 20);
-      const x = Math.max(130, Math.min(WIDTH - 130, ball.x));
-      this.text(name, x, ball.y + ball.r + 25, 20, white, 'center');
-      if (ball.first) this.text('first message!', x, ball.y + ball.r + 49, 18, mint, 'center');
+      c.font = '700 20px Arial, sans-serif';
+      let width = c.measureText(name).width;
+      if (ball.first) {
+        c.font = '700 18px Arial, sans-serif';
+        width = Math.max(width, c.measureText('first message!').width);
+      }
+      width = Math.ceil(width) + 8;
+      const x = Math.max(130, Math.min(WIDTH - 130, ball.x)), y = ball.y + ball.r + 25;
+      const box = { x: x + offsetX - width / 2, y: y + offsetY - 18, w: width, h: ball.first ? 58 : 36 };
+      if (occupied.some(other => box.x < other.x + other.w && box.x + box.w > other.x &&
+        box.y < other.y + other.h && box.y + box.h > other.y)) continue;
+      occupied.push(box);
+      c.globalAlpha = Math.min(1, (1.5 - ball.age) * 2);
+      this.text(name, x, y, 20, white, 'center');
+      if (ball.first) this.text('first message!', x, y + 24, 18, mint, 'center');
     }
     c.globalAlpha = 1;
   }
@@ -134,7 +151,10 @@ export class Renderer {
       c.drawImage(this.background, 0, 0);
     }
     c.save();
-    if (game.shake && !game.reducedMotion) c.translate(Math.sin(game.clock * 107) * game.shake, Math.cos(game.clock * 93) * game.shake * .6);
+    const shake = game.reducedMotion ? 0 : game.shake || 0;
+    const offsetX = shake ? Math.sin(game.clock * 107) * shake : 0;
+    const offsetY = shake ? Math.cos(game.clock * 93) * shake * .6 : 0;
+    c.translate(offsetX, offsetY);
     for (const brick of game.bricks) if (brick.hp > 0) {
       this.box(brick.x, brick.y + 4, brick.w, brick.h, '#050f18b3', 3);
       this.box(brick.x, brick.y, brick.w, brick.h, brick.flash > 0 ? white : brick.color, 3);
@@ -156,6 +176,16 @@ export class Renderer {
       c.globalAlpha = Math.max(0, 1 - p.age / p.life);
       this.box(p.x, p.y, p.size, p.size, p.color, 2);
     }
+    const leaders = this.options.ui ? game.leaders() : [];
+    const occupied = [{ x: 780, y: 40, w: 360, h: 115 }];
+    if (this.options.ui) {
+      occupied.push({ x: 48, y: 44, w: 335, h: 56 },
+        { x: 1542, y: 44, w: 330, h: 70 + Math.max(1, leaders.length) * 32 });
+      if (mock) occupied.push({ x: 48, y: 840, w: 406, h: 200 });
+    }
+    if (!game.win) occupied.push({ x: 600, y: 760, w: 720, h: 180 });
+    if (backRemaining !== null) occupied.push({ x: 773, y: 996, w: 374, h: 56 });
+    this.ballLabels(game.balls, occupied, offsetX, offsetY);
     c.globalAlpha = 1;
     c.restore();
     // HUD stays above the action and outside its screen shake.
@@ -168,7 +198,7 @@ export class Renderer {
       this.box(760, 882, Math.max(6, 400 * (1 - game.remaining / game.total)), 6, mint, 3);
       this.text(`${formatTime(game.elapsed)} ELAPSED  ·  ${game.launched} BALLS LAUNCHED`, 960, 917, 17, '#b8cec5', 'center');
     }
-    if (this.options.ui) this.hud(game, status, mock);
+    if (this.options.ui) this.hud(game, status, mock, leaders);
     if (backRemaining !== null) {
       this.box(777, 1000, 366, 48, '#0a151cdd', 24);
       this.text(backRemaining > 0 ? `BACK IN ${formatTime(Math.ceil(backRemaining))}` : 'BACK ANY SECOND', 960, 1024, 23, mint, 'center');
@@ -178,13 +208,12 @@ export class Renderer {
     if (game.win && game.win.age >= .6) this.win(game);
   }
 
-  hud(game, status, mock) {
+  hud(game, status, mock, leaders) {
     const colors = { connected: '#91ffd4', connecting: '#ffd56b', offline: '#ff807e', mock: '#8cc8ff' };
     this.box(48, 44, 335, 56, '#0a151cdb', 28);
     this.box(70, 65, 14, 14, colors[status] || colors.offline, 7);
     const label = this.options.channel ? `#${this.options.channel} · ${status}` : 'MOCK CHAT · LIVE DEMO';
     this.text(this.fit(label, 267, 18), 98, 73, 18);
-    const leaders = game.leaders();
     this.box(1542, 44, 330, 70 + Math.max(1, leaders.length) * 32, '#0a151cdb', 18);
     this.text('BRICK BREAKERS', 1566, 77, 18, mint);
     if (!leaders.length) this.text('The first brick is yours.', 1566, 123, 18, '#a4bcb3', 'left', 500);

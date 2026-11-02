@@ -81,7 +81,7 @@ node --test
 
 The project started as a written spec ([`SPEC.md`](SPEC.md)) and a short set of working rules for the agent ([`AGENTS.md`](AGENTS.md)). OpenAI Codex built the game from them in one thread: the Twitch parser and client, the physics, the effects, the setup page and the tests.
 
-I playtested every build in a real browser and sent what I found back into the same thread. The second turn fixed faint event banners, raid waves that printed the raider's name on 40 balls, and a white box behind the setup preview. The third drew the HUD above the balls, so the timer stays readable, and made each new wall tougher when chat is busy, so a big channel doesn't flatten it in seconds. Each turn ended with `node --test` passing; there are 29 tests now.
+I playtested every build in a real browser and sent what I found back into the same thread. The second turn fixed faint event banners, raid waves that printed the raider's name on 40 balls, and a white box behind the setup preview. The third drew the HUD above the balls, so the timer stays readable, and made each new wall tougher when chat is busy, so a big channel doesn't flatten it in seconds. After the repo went public, a stress test at 40 messages a second showed name labels piling up into an unreadable mess, so two more turns made labels skip any spot that's already taken by another name or a HUD panel. Each turn ended with `node --test` passing; there are 30 tests now.
 
 ## License
 
